@@ -1,0 +1,18 @@
+# Build output and IDE state
+bin/
+obj/
+.vs/
+.vscode/
+.idea/
+
+# Deployed build the user actually runs. RacingDSX.json in there is the user's live config:
+# keeping it out of git means no checkout/reset can ever overwrite it. Backups of stock and
+# previous exes also live there, outside version control.
+/RacingDSX_exe/
+
+# Upstream source archive; its contents are the first commit of this repo.
+/RacingDSX-main.zip
+
+# Telemetry recordings: keep the raw .fzrec (small, needed for replay), not the CSVs that
+# tools/decode_recording.ps1 regenerates from them.
+/recordings/*.csv
