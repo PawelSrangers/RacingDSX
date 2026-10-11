@@ -112,33 +112,44 @@ this fork; don't "fix" them incidentally.
 
 ## Testing
 
-There is no unit test project. Use the harness in `tools/`, which fakes both the game and DSX
-so nothing needs to be installed:
+There is no unit test project. Everything in `tools/` is black-box: it runs a **sandboxed copy**
+of an exe in `%TEMP%` with app check off and its own ports (game 5310, DSX 6970), so the user's
+real DSX, RacingDSX and game can stay open, and it only ever stops its own process. Never point
+a test at 5300/6969 or kill RacingDSX/DSX by name.
+
+**Real data first.** For anything about trigger feel, replay the user's recordings:
 
 ```bash
-powershell -ExecutionPolicy Bypass -File tools/run_harness.ps1
+powershell -ExecutionPolicy Bypass -File tools/check_brake_replay.ps1 recordings/gravel_rally_20261011_200137.fzrec
 ```
 
-- `-StopEarly` cuts telemetry off mid-run to exercise the idle-release path.
-- `-ExePath RacingDSX_exe/backup_original/RacingDSX.exe` A/B tests against stock upstream.
+It replays the `.fzrec` with original timing and prints, per braking event, lock% (frames with a
+wheel turning at < 35% of car speed) next to the share of time the brake trigger spent in
+vibration / resistance / zero. On the current build vibration tracks lock% within a few points;
+stock gives `ZERO 100%` on gravel. Add `-ExePath ...` to A/B. Shares are time-weighted on purpose:
+dedupe means steady states are not resent, so counting packets under-weights them.
 
-Expected on the fixed build: **~28 packets/s** with three instructions per packet. Stock
-upstream gives **~419 packets/s** with one instruction each. With `-StopEarly`, the final
-packet must be the trigger release:
-`{"instructions":[{"type":1,"parameters":[0,1,0,0,0]},{"type":1,"parameters":[0,2,0,0,0]}]}`
+**Rate and idle regression:**
 
-For trigger-feel questions, `tools/probe_brake.ps1 [-ExePath ...]` holds fixed brake/slip
-combinations and fires brief lock-up spikes, then prints exactly what the left trigger receives.
-Run it against `backup_original` too: identical steady results mean the behaviour is upstream
-logic, not ours. `fake_forza.ps1` takes `-Brake`, `-Slip`, `-SpikeSlip` for ad-hoc probes.
+```bash
+powershell -ExecutionPolicy Bypass -File tools/run_harness.ps1 -StopEarly
+```
 
-Real game data: `tools/record_forza.cmd` (or `record_forza.ps1 -Name x`) records raw telemetry to
-`recordings/<name>_<timestamp>.fzrec` — RacingDSX must be closed, it needs port 5300.
-`tools/decode_recording.ps1 <file>` turns it into a CSV with every field. Use recordings rather
-than guessing what the game sends; the fake inputs above are only as good as our assumptions.
+Expected: **~28 packets/s**, three instructions each (stock: ~419/s, one each). Last packet
+must be the trigger release `{"instructions":[{"type":1,"parameters":[0,1,0,0,0]},{"type":1,"parameters":[0,2,0,0,0]}]}`.
 
-The harness needs UDP 6969 free, so close real DSX first — it refuses to run rather than
-stealing the port. It writes to `%TEMP%\racingdsx_harness` and never touches `RacingDSX_exe/`.
+**Synthetic brake scenarios:** `tools/probe_brake.ps1 [-ExePath ...]` holds fixed brake / slip /
+locked-wheel combinations and fires 14 ms lock-ups; expect resistance while rolling, vibration
+16→20 Hz for 1→4 locked wheels, and every lock-up delivered. `fake_forza.ps1` takes `-Brake`,
+`-Slip`, `-LockWheels`, `-SpikeSlip`, `-Port`. It rolls its wheels at car speed (0.32 m radius)
+and keeps them on the ground; without that every wheel would look locked to the parser.
+
+**Recording real data:** `tools/record_forza.cmd` (or `record_forza.ps1 -Name x`) captures raw
+telemetry to `recordings/<name>_<timestamp>.fzrec`. The user's RacingDSX must be closed for that
+(it owns 5300); the game can stay running. `decode_recording.ps1` → CSV with every field,
+`analyze_braking.ps1` → per-event lock/slip table, `replay_recording.ps1` → plays a recording back.
+Ask for a recording rather than guessing what the game sends; fakes are only as good as our
+assumptions (the gravel bug was invisible until real data showed lock slip of 3.15, not > 4).
 
 For UI changes, start the app and screenshot it — that is the only way to check a layout or
 theme edit, since the designer file can't be opened here:
@@ -171,6 +182,12 @@ you changed.
   entirely on index and on the `InstructionType`. `ParametersConverter` serialises it, coercing
   everything numeric to int via `ToSafeInt32` (NaN → 0, out of range → clamped) so a bad telemetry
   value cannot throw out of the send path.
+- **Brake lock = wheel speed vs car speed, never tyre slip.** Forza normalises slip by the
+  surface's grip, so a fully locked wheel reads ~5.6 on asphalt but ~3.15 on gravel; any slip
+  threshold works on one surface and not the other. `GetBrakeLock` compares each grounded wheel's
+  ground speed (`ForzaParser` learns the rolling radius while cruising) with `Speed`. Brake
+  `GripLossValue` is unused since ADR-0009, and `Min/MaxVibration` now mean frequency at one /
+  all four wheels locked. The throttle side still uses the old slip logic.
 - **`SwitchActiveProfile` runs once a second.** `AppCheckThread` reports every 1000 ms and
   `AppCheckReporter` calls it each time, with `null` whenever no game is running. It must
   early-return when the requested profile already matches, or every tick rebuilds both lists,
