@@ -42,6 +42,14 @@ namespace RacingDSX.GameParsers
 
             data.EngineMaxRpm = PacketParse.GetSingle(packet, 252) * 10.0f;
             data.EngineIdleRpm = 0;
+            // Dirt reports wheel surface speed in m/s directly (same offsets as the slip above),
+            // so no radius is needed. FL, FR, RL, RR.
+            data.WheelGroundSpeed[0] = Math.Abs(PacketParse.GetSingle(packet, 108));
+            data.WheelGroundSpeed[1] = Math.Abs(PacketParse.GetSingle(packet, 112));
+            data.WheelGroundSpeed[2] = Math.Abs(PacketParse.GetSingle(packet, 100));
+            data.WheelGroundSpeed[3] = Math.Abs(PacketParse.GetSingle(packet, 104));
+            data.HasWheelSpeeds = true;
+
             data.FourWheelCombinedTireSlip = (Math.Abs(data.TireCombinedSlipFrontLeft) + Math.Abs(data.TireCombinedSlipFrontRight) + Math.Abs(data.TireCombinedSlipRearLeft) + Math.Abs(data.TireCombinedSlipRearRight)) / 4;
             data.FrontWheelsCombinedTireSlip = (Math.Abs(data.TireCombinedSlipFrontLeft) + Math.Abs(data.TireCombinedSlipFrontRight)) / 2;
             data.RearWheelsCombinedTireSlip = (Math.Abs(data.TireCombinedSlipRearLeft) + Math.Abs(data.TireCombinedSlipRearRight)) / 2;

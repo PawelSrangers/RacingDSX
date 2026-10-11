@@ -31,6 +31,13 @@
         public float FrontWheelsCombinedTireSlip { get; set; }
         public float RearWheelsCombinedTireSlip { get; set; }
 
+        // Per wheel, ordered FL, FR, RL, RR. Speed of the tyre surface over the ground in m/s, so
+        // a wheel can be compared with Speed directly: ~equal when rolling, ~0 when locked.
+        // Only meaningful when HasWheelSpeeds is set by the parser.
+        public bool HasWheelSpeeds { get; set; }
+        public float[] WheelGroundSpeed { get; set; } = new float[4];
+        public bool[] WheelInAir { get; set; } = new bool[4];
+
 
         //  public uint TimestampMS { get; set; } // Can overflow to 0 eventually
 

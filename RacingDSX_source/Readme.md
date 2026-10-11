@@ -70,6 +70,16 @@ Two things differ from FH5 and are handled by RacingDSX automatically:
    kept streaming with `IsRaceOn = 0`. RacingDSX now detects the silence and releases the triggers
    instead of leaving them stiff.
 
+**Brake trigger and wheel lock.** A locked wheel is detected from wheel speed against car speed,
+so it works the same on asphalt, gravel and dirt (the old tyre-slip test never fired on gravel and
+dropped the brake resistance to zero instead). On the Brake Trigger tab:
+
+- *Min / Max Brake Vibration* — vibration frequency with one wheel locked / all four locked.
+- *Max Stiffness* / *Min Stiffness* — vibration strength at a light press / at full brake.
+- *Grip Loss Value* — no longer used for the brake.
+
+With ABS on in the game the wheels rarely lock, so expect little vibration.
+
 -----------------------------------------------------------------------------------------------------------------------------------------
 Note for Forza Motorsport 7
 1. Launch the game and head to the HUD options menu

@@ -25,6 +25,14 @@ namespace RacingDSX.GameParsers
         public static readonly uint CarClassS2 = 5;
         public static readonly int[] ColorClassS2 = { 75, 88, 229 };
         public static readonly int[] ColorClassX = { 105, 182, 72 };
+
+        // Normalized suspension travel at or below this means the wheel is hanging in the air.
+        private const float WheelInAirSuspension = 0.02f;
+        // Rolling radius per wheel (FL, FR, RL, RR) in metres, to turn rad/s into ground speed.
+        // Learned while driving because wheel size varies by car and FH6 reports CarOrdinal as 0;
+        // 0.32 m is what the user's recordings measured, a sensible start for most cars.
+        private readonly float[] wheelRadius = { 0.32f, 0.32f, 0.32f, 0.32f };
+
         public ForzaParser(Config.Config settings) : base(settings)
         {
         }
@@ -167,6 +175,17 @@ namespace RacingDSX.GameParsers
            data.FrontWheelsCombinedTireSlip = (Math.Abs(data.TireCombinedSlipFrontLeft) + Math.Abs(data.TireCombinedSlipFrontRight)) / 2;
            data.RearWheelsCombinedTireSlip = (Math.Abs(data.TireCombinedSlipRearLeft) + Math.Abs(data.TireCombinedSlipRearRight)) / 2;
 
+            float[] rotation = { packet.WheelRotationSpeedFl(), packet.WheelRotationSpeedFr(), packet.WheelRotationSpeedRl(), packet.WheelRotationSpeedRr() };
+            float[] slipRatio = { packet.TireSlipRatioFl(), packet.TireSlipRatioFr(), packet.TireSlipRatioRl(), packet.TireSlipRatioRr() };
+            float[] suspension = { packet.NormSuspensionTravelFl(), packet.NormSuspensionTravelFr(), packet.NormSuspensionTravelRl(), packet.NormSuspensionTravelRr() };
+            for (int wheel = 0; wheel < 4; wheel++)
+            {
+                data.WheelInAir[wheel] = suspension[wheel] <= WheelInAirSuspension;
+                CalibrateWheelRadius(wheel, rotation[wheel], slipRatio[wheel]);
+                data.WheelGroundSpeed[wheel] = Math.Abs(rotation[wheel]) * wheelRadius[wheel];
+            }
+            data.HasWheelSpeeds = true;
+
 
            /* data.TimestampMS = packet.TimestampMs();
             data.AccelerationY = packet.AccelerationY();
@@ -242,6 +261,25 @@ namespace RacingDSX.GameParsers
             data.TireSlipAngleRearRight = packet.TireSlipAngleRr();
             return data;
             throw new NotImplementedException();*/
+        }
+
+        // Nudge a wheel's radius towards speed / rotation whenever that wheel is plainly
+        // free-rolling: off the brake, light throttle, on the ground, almost no slip.
+        private void CalibrateWheelRadius(int wheel, float rotation, float slipRatio)
+        {
+            if (data.Brake > 0 || data.Accelerator > 60 || data.Speed < 8
+                || data.WheelInAir[wheel] || Math.Abs(slipRatio) > 0.1f || Math.Abs(rotation) < 1)
+            {
+                return;
+            }
+
+            float measured = data.Speed / Math.Abs(rotation);
+            if (!float.IsFinite(measured) || measured < 0.15f || measured > 0.8f)
+            {
+                return;
+            }
+
+            wheelRadius[wheel] = wheelRadius[wheel] * 0.98f + measured * 0.02f;
         }
     }
 }

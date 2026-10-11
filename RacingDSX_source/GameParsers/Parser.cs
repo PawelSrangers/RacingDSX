@@ -26,6 +26,18 @@ namespace RacingDSX.GameParsers
         protected int lastThrottleFreq = 0;
         protected int lastBrakeResistance = 200;
         protected int lastBrakeFreq = 0;
+        // Vibration stiffness has its own filter state: it lives on a different scale from the
+        // plain resistance above and used to leak into it after every lock.
+        protected int lastBrakeStiffness = 0;
+        protected bool bBrakeLockedLastFrame = false;
+
+        // Brake lock detection, see ADR-0009. A wheel's rolling ratio is its ground speed over the
+        // car's speed: about 1 while rolling, about 0 when locked, on any surface.
+        protected const float LockRatioFull = 0.1f;   // at or below: wheel fully locked
+        protected const float LockRatioNone = 0.6f;   // at or above: wheel rolling
+        protected const float LockOnset = 0.5f;       // per-wheel lock amount that starts vibration
+        protected const float LockMinSpeed = 3.0f;    // m/s; below this the ratio is just noise
+        protected const uint LockMinBrake = 20;       // brake input; ignore handbrake-only locks
 
         protected uint LastValidCarClass = 0;
         protected int LastValidCarCPI = 0;
@@ -109,36 +121,41 @@ namespace RacingDSX.GameParsers
             int filteredFreq = 0;
             //Update the left(Brake) trigger
             BrakeSettings brakeSettings = activeProfile.brakeSettings;
-            // Define losing grip as tires slipping while braking a fair ammount
-            bool bLosingBrakeGrip = data.FourWheelCombinedTireSlip > brakeSettings.GripLossValue && data.Brake > 100;
+            // Locks are detected from wheel speed against car speed, not from tyre slip: Forza
+            // reports slip relative to the surface's grip, so a fully locked wheel reads ~5.6 on
+            // asphalt but only ~3.15 on gravel, and the old slip test (vibrate above ~4, zero
+            // resistance below) gave no feedback at all on gravel.
+            float lockAmount = GetBrakeLock(out float worstWheel);
+            bool bWheelsLocked = worstWheel >= LockOnset;
 
             if (brakeSettings.TriggerMode == Config.TriggerMode.Off)
             {
                 LeftTrigger.Parameters = new object[] { controllerIndex, Trigger.Left, TriggerMode.Normal, 0, 0 };
+                bWheelsLocked = false;
             }
-            // If losing grip, start to "vibrate"
-            else if (bLosingBrakeGrip && brakeSettings.TriggerMode == Config.TriggerMode.Vibration)
+            // Wheels locked: vibrate, faster the more wheels are locked
+            else if (bWheelsLocked && brakeSettings.TriggerMode == Config.TriggerMode.Vibration)
             {
-                freq = (int)Math.Floor(Map(data.FourWheelCombinedTireSlip, brakeSettings.GripLossValue, 5, 0, brakeSettings.MaxVibration));
+                freq = (int)Math.Floor(Map(lockAmount, 0, 1, brakeSettings.MinVibration, brakeSettings.MaxVibration));
                 resistance = (int)Math.Floor(Map(data.Brake, 0, 255, brakeSettings.MaxStiffness, brakeSettings.MinStiffness));
-                filteredResistance = (int)EWMA(resistance, lastBrakeResistance, brakeSettings.ResistanceSmoothing);
+
+                // Start each lock at full strength instead of ramping up from the previous one.
+                if (!bBrakeLockedLastFrame)
+                {
+                    lastBrakeStiffness = resistance;
+                    lastBrakeFreq = freq;
+                }
+                filteredResistance = (int)EWMA(resistance, lastBrakeStiffness, brakeSettings.ResistanceSmoothing);
                 filteredFreq = (int)EWMA(freq, lastBrakeFreq, brakeSettings.VibrationSmoothing);
 
-                lastBrakeResistance = filteredResistance;
+                lastBrakeStiffness = filteredResistance;
                 lastBrakeFreq = filteredFreq;
 
-                if (filteredFreq <= brakeSettings.MinVibration)
-                {
-                    LeftTrigger.Parameters = new object[] { controllerIndex, Trigger.Left, TriggerMode.Resistance, 0, 0 };
-                }
-                else
-                {
-                    LeftTrigger.Parameters = new object[] { controllerIndex, Trigger.Left, TriggerMode.CustomTriggerValue, CustomTriggerValueMode.VibrateResistance,
-                            filteredFreq *brakeSettings.EffectIntensity, filteredResistance * brakeSettings.EffectIntensity, brakeSettings.VibrationStart, 0, 0, 0, 0 };
-                }
-                //Set left trigger to the custom mode VibrateResitance with values of Frequency = freq, Stiffness = 104, startPostion = 76. 
-                reportableInstruction.RacingDSXReportStructs.Add(new RacingDSXReportStruct(VerboseLevel.Limited, RacingDSXReportStruct.ReportType.RACING, RacingDSXReportStruct.RacingReportType.BRAKE_VIBRATION, $"Setting Brake to vibration mode with freq: {filteredFreq}\r\n Resistance: {filteredResistance}"));
-                
+                LeftTrigger.Parameters = new object[] { controllerIndex, Trigger.Left, TriggerMode.CustomTriggerValue, CustomTriggerValueMode.VibrateResistance,
+                        filteredFreq * brakeSettings.EffectIntensity, filteredResistance * brakeSettings.EffectIntensity, brakeSettings.VibrationStart, 0, 0, 0, 0 };
+                //Set left trigger to the custom mode VibrateResitance with values of Frequency = freq, Stiffness = 104, startPostion = 76.
+                reportableInstruction.RacingDSXReportStructs.Add(new RacingDSXReportStruct(VerboseLevel.Limited, RacingDSXReportStruct.ReportType.RACING, RacingDSXReportStruct.RacingReportType.BRAKE_VIBRATION, $"Wheels locked ({lockAmount:P0}): vibration freq {filteredFreq}\r\n Resistance: {filteredResistance}"));
+
             }
             else
             {
@@ -156,6 +173,7 @@ namespace RacingDSX.GameParsers
 
                reportableInstruction.RacingDSXReportStructs.Add(new RacingDSXReportStruct(VerboseLevel.Limited, RacingDSXReportStruct.ReportType.RACING, RacingDSXReportStruct.RacingReportType.BRAKE, $"Brake: {data.Brake}\r\n Brake Resistance: {filteredResistance}\r\n Tire Slip: {data.FourWheelCombinedTireSlip} \r\n FLCPS: {data.frontLeftContactPatchV} \r\n speed: {data.Speed}"));
             
+            bBrakeLockedLastFrame = bWheelsLocked && brakeSettings.TriggerMode == Config.TriggerMode.Vibration;
             reportableInstruction.Instructions = new Instruction[] { LeftTrigger };
             return reportableInstruction;
 
@@ -230,6 +248,40 @@ namespace RacingDSX.GameParsers
             reportableInstruction.Instructions = new Instruction[] { RightTrigger };
 
             return reportableInstruction;
+        }
+
+        // How locked the wheels are under braking: 0 = all rolling, 1 = all four locked. worstWheel
+        // is the most locked single wheel. Airborne wheels are skipped: a braked wheel stops the
+        // moment it leaves the ground, which is not a lock worth feeling.
+        protected float GetBrakeLock(out float worstWheel)
+        {
+            worstWheel = 0;
+            if (!data.HasWheelSpeeds || data.Speed < LockMinSpeed || data.Brake <= LockMinBrake)
+            {
+                return 0;
+            }
+
+            float total = 0;
+            for (int wheel = 0; wheel < 4; wheel++)
+            {
+                if (data.WheelInAir[wheel])
+                {
+                    continue;
+                }
+
+                float ratio = data.WheelGroundSpeed[wheel] / data.Speed;
+                float amount = (LockRatioNone - ratio) / (LockRatioNone - LockRatioFull);
+                if (float.IsNaN(amount))
+                {
+                    continue;
+                }
+
+                amount = Math.Clamp(amount, 0f, 1f);
+                total += amount;
+                worstWheel = Math.Max(worstWheel, amount);
+            }
+
+            return total / 4;
         }
 
         public float Map(float x, float in_min, float in_max, float out_min, float out_max)
