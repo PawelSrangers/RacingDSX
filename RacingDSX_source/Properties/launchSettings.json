@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "RacingDSX": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
