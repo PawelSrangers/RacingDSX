@@ -179,14 +179,21 @@ namespace RacingDSX
                 //   profileName = selectedProfile.Name;
                 return;
             }
-            if (currentSettings.ActiveProfile != null && currentSettings.ActiveProfile.Name == profileName)
-                return;
 
             if (profileName != null && currentSettings.Profiles.ContainsKey(profileName))
             {
                 profile = currentSettings.Profiles[profileName];
 
             }
+
+            // AppCheckReporter calls this once a second. The old guard only caught the case
+            // where a profile was already active, so while no game was running (active profile
+            // null, requested null) every tick fell through and rebuilt both lists, rewrote the
+            // config to disk and restarted the worker thread. Rebuilding the executables list
+            // reset its DataSource, which is what kept snapping the selection back to item 0.
+            if (ReferenceEquals(currentSettings.ActiveProfile, profile))
+                return;
+
             currentSettings.ActiveProfile = profile;
             ConfigHandler.SaveConfig();
             loadProfilesIntoList();
@@ -210,6 +217,14 @@ namespace RacingDSX
                 return;
             if (currentSettings.ActiveProfile == null)
                 return;
+            // A CancellationTokenSource only fires once, so it has to be rebuilt per run.
+            // Reusing the cancelled one meant every restart after the first left its worker
+            // running, and those workers then fought over the shared UDP sockets.
+            forzaThreadCancellationToken?.Dispose();
+            forzaThreadCancellationToken = new CancellationTokenSource();
+            forzaThreadToken = forzaThreadCancellationToken.Token;
+            forzaThreadToken.Register(() => RacingDSXWorker.Stop());
+
             RacingDSXThread = new Thread(new ThreadStart(RacingDSXWorker.Run));
             RacingDSXThread.IsBackground = true;
 
@@ -224,6 +239,9 @@ namespace RacingDSX
                     && forzaThreadCancellationToken != null)
                 {
                     forzaThreadCancellationToken.Cancel();
+                    // The worker can be mid-Receive; give it the chance to close its sockets
+                    // before a new one tries to bind the same telemetry port.
+                    RacingDSXThread.Join(1500);
                 }
             }
             catch (Exception)
