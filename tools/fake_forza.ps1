@@ -17,7 +17,11 @@ param(
     # -1 keeps the default sine sweep.
     [int]$Brake = -1,
     [float]$Slip = -1,
-    # Brief lock-ups: every SpikeEveryMs, hold slip at SpikeSlip for SpikeFrames packets.
+    # Lock this many wheels (FL, FR, RL, RR order): they stop turning while the car moves.
+    # The others roll at the car's speed. RacingDSX detects locks from this, not from slip.
+    [int]$LockWheels = 0,
+    # Brief lock-ups: every SpikeEveryMs, for SpikeFrames packets lock all four wheels and
+    # hold slip at SpikeSlip.
     [float]$SpikeSlip = -1,
     [int]$SpikeEveryMs = 300,
     [int]$SpikeFrames = 2
@@ -37,6 +41,7 @@ $next = 0.0
 $nextSpikeMs = 500.0
 $spikeLeft = 0
 $spikesSent = 0
+$inSpike = $false
 
 while ($sw.Elapsed.TotalSeconds -lt $Seconds) {
     if ($sw.Elapsed.TotalMilliseconds -lt $next) { continue }
@@ -67,16 +72,26 @@ while ($sw.Elapsed.TotalSeconds -lt $Seconds) {
             $nextSpikeMs = $sw.Elapsed.TotalMilliseconds + $SpikeEveryMs
             $spikesSent++
         }
-        if ($spikeLeft -gt 0) { $slipNow = $SpikeSlip; $spikeLeft-- }
+        $inSpike = $spikeLeft -gt 0
+        if ($inSpike) { $slipNow = $SpikeSlip; $spikeLeft-- }
     }
     if ($slipNow -ge 0) {
         foreach ($off in 180, 184, 188, 192) { Set-F32 $buf $off $slipNow }
+    }
+
+    # Wheels on the ground (normalized suspension travel; ~0 would mean airborne) and turning
+    # at the car's speed for a 0.32 m wheel, except the locked ones.
+    $speed = [float](40 + 20 * [Math]::Sin($t))
+    $locked = if ($SpikeSlip -ge 0 -and $inSpike) { 4 } else { $LockWheels }
+    for ($w = 0; $w -lt 4; $w++) {
+        Set-F32 $buf (68 + 4 * $w) 0.4
+        Set-F32 $buf (100 + 4 * $w) $(if ($w -lt $locked) { 0.0 } else { $speed / 0.32 })
     }
     $buf[216] = 4                                          # CarClass (S1)
     $buf[220] = 200                                        # CarPerformanceIndex
 
     # --- dash section: FMData.BufferOffset = 12 for the Horizon layout ---
-    Set-F32 $buf 256 ([float](40 + 20 * [Math]::Sin($t)))  # Speed  (244 + 12)
+    Set-F32 $buf 256 $speed                                # Speed  (244 + 12)
     if ($Idle) {
         Set-F32 $buf 260 0.0                               # Power  (248 + 12)
         $buf[315] = 0                                      # Accelerator (303 + 12)
