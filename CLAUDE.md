@@ -186,8 +186,15 @@ you changed.
   surface's grip, so a fully locked wheel reads ~5.6 on asphalt but ~3.15 on gravel; any slip
   threshold works on one surface and not the other. `GetBrakeLock` compares each grounded wheel's
   ground speed (`ForzaParser` learns the rolling radius while cruising) with `Speed`. Brake
-  `GripLossValue` is unused since ADR-0009, and `Min/MaxVibration` now mean frequency at one /
-  all four wheels locked. The throttle side still uses the old slip logic.
+  settings (ADR-0009/0010): `Min/MaxVibration` = frequency at one / four wheels locked;
+  `VibrationModeStart` = minimum brake input (0–255) for lock vibration; `MinStiffness` is used
+  at *full* brake and `MaxStiffness` at *light* brake (the UI labels say so); `GripLossValue` is
+  unused and its control is disabled. The throttle side still uses the old slip logic.
+- **UI handlers come in pairs and must touch only their own pair.** Each setting has a slider
+  and a number box whose handlers update each other. Upstream's brake stiffness box read the
+  *vibration* box, and because `SwitchDisplayedProfile` sets every box on start, it silently
+  overwrote stiffness with vibration values on each launch. When adding or editing a handler,
+  check it names its own controls; a mistake here corrupts the user's saved config.
 - **`SwitchActiveProfile` runs once a second.** `AppCheckThread` reports every 1000 ms and
   `AppCheckReporter` calls it each time, with `null` whenever no game is running. It must
   early-return when the requested profile already matches, or every tick rebuilds both lists,
