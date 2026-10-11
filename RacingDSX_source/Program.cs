@@ -106,7 +106,7 @@ namespace RacingDSX
                         writer.WriteNumberValue(intValue);
                         break;
                     case double doubleValue:
-                        writer.WriteNumberValue(doubleValue);
+                        writer.WriteNumberValue(ToSafeInt32(doubleValue));
                         break;
                     case string stringValue:
                         writer.WriteStringValue(stringValue);
@@ -118,11 +118,36 @@ namespace RacingDSX
                         writer.WriteNumberValue(Convert.ToInt32(enumValue));
                         break;
                     default:
-                        writer.WriteNumberValue(Convert.ToInt32(item));
+                        writer.WriteNumberValue(ToSafeInt32(item));
                         break;
                 }
             }
             writer.WriteEndArray();
+        }
+
+        // Trigger parameters arrive as floats derived from telemetry. A NaN or an
+        // out-of-range value used to throw out of Convert.ToInt32 here, which aborted the
+        // send and could take the worker thread down with it; clamping keeps the stream
+        // alive instead.
+        private static int ToSafeInt32(object item)
+        {
+            try
+            {
+                double value = Convert.ToDouble(item, System.Globalization.CultureInfo.InvariantCulture);
+
+                if (double.IsNaN(value))
+                    return 0;
+                if (value >= int.MaxValue)
+                    return int.MaxValue;
+                if (value <= int.MinValue)
+                    return int.MinValue;
+
+                return (int)value;
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
         }
     }
 

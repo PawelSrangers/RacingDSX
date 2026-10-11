@@ -49,6 +49,28 @@ Step by step instructions for Forza Horizon 5:
 
 
 -----------------------------------------------------------------------------------------------------------------------------------------
+
+Step by step instructions for Forza Horizon 6:
+
+Setup is the same as Forza Horizon 5 (HUD & Gameplay -> Telemetry Output -> Data Out ON, IP 127.0.0.1, port 5300).
+The packet format is identical to FH4/FH5, so no extra configuration is needed.
+
+Two things differ from FH5 and are handled by RacingDSX automatically:
+
+1. **FH6 sends telemetry at the game's frame rate**, not at a fixed 60 Hz. At 120-240 fps that is
+   two to four times the FH5 rate. Forwarding all of it to DSX floods its HID output queue, which
+   stalls DSX's controller thread and leaves the emulated pad latched on its last state - the
+   symptom is steering or throttle "sticking" at a random moment even though you released the stick.
+   RacingDSX now caps the update rate it sends to DSX and packs all instructions into one message.
+   The cap lives in `RacingDSX.json` as `DSXUpdateRateHz` (default 30). **If you use the controller
+   over Bluetooth and still see sticking, lower it to 20 or 15.** Raising it above 60 is not
+   recommended.
+
+2. **FH6 stops sending telemetry entirely** in menus, pauses, replays and after a race, where FH4/FH5
+   kept streaming with `IsRaceOn = 0`. RacingDSX now detects the silence and releases the triggers
+   instead of leaving them stiff.
+
+-----------------------------------------------------------------------------------------------------------------------------------------
 Note for Forza Motorsport 7
 1. Launch the game and head to the HUD options menu
 2. Set Data Out to ON

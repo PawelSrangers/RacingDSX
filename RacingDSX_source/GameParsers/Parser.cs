@@ -63,7 +63,11 @@ namespace RacingDSX.GameParsers
 
             // Calculate RPM ratio
             float engineRange = data.EngineMaxRpm - data.EngineIdleRpm;
-            float CurrentRPMRatio = (data.CurrentEngineRpm - data.EngineIdleRpm) / engineRange;
+            // Both RPM fields read 0 until a car is actually loaded, which used to divide by
+            // zero and turn the light bar colours into garbage.
+            float CurrentRPMRatio = engineRange > 0
+                ? Math.Clamp((data.CurrentEngineRpm - data.EngineIdleRpm) / engineRange, 0f, 1f)
+                : 0f;
 
             // Calculate color based on RPM
             int RedChannel = (int)Math.Floor(CurrentRPMRatio * 255);
@@ -230,6 +234,18 @@ namespace RacingDSX.GameParsers
 
         public float Map(float x, float in_min, float in_max, float out_min, float out_max)
         {
+            if (float.IsNaN(x))
+            {
+                x = in_min;
+            }
+
+            // An empty input range (e.g. AccelerationLimit set to 0) would divide by zero
+            // and push a NaN all the way into the packet we hand DSX.
+            if (in_max == in_min)
+            {
+                return out_min;
+            }
+
             if (x > in_max)
             {
                 x = in_max;

@@ -41,7 +41,7 @@ namespace RacingDSX.Config
                     gameUDPPort = 5300,
                     GameType = GameTypes.Forza,
                 };
-                profile.executableNames.AddRange(new string[] { "ForzaHorizon5", "ForzaHorizon4", "ForzaMotorsport7", "forza_gaming.desktop.x64_release_final", "forza_steamworks_release_final" });
+                profile.executableNames.AddRange(new string[] { "ForzaHorizon6", "ForzaHorizon5", "ForzaHorizon4", "ForzaMotorsport7", "forza_gaming.desktop.x64_release_final", "forza_steamworks_release_final" });
                 config.Profiles.Add("Forza", profile);
             }
             if (!config.Profiles.ContainsKey("Dirt"))

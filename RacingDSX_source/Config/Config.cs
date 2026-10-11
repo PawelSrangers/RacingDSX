@@ -17,6 +17,13 @@ namespace RacingDSX.Config
 
         public int DSXPort { get; set; } = 6969; // This sets the default dsx port
 
+        // Upper limit on how many instruction packets per second we push at DSX.
+        // Forza Horizon 6 emits telemetry at the game's frame rate (~130+/s) instead of
+        // FH4/FH5's fixed 60/s. Forwarding all of it floods DSX's HID output queue, which
+        // stalls its controller thread and leaves the emulated pad latched on its last
+        // state (sticks appear stuck). Lower this to 20 if you play over Bluetooth.
+        public int DSXUpdateRateHz { get; set; } = 30;
+
         public String DefaultProfile { get; set; } = "Forza";
     }
 }
