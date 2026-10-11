@@ -37,7 +37,8 @@ namespace RacingDSX.GameParsers
         protected const float LockRatioNone = 0.6f;   // at or above: wheel rolling
         protected const float LockOnset = 0.5f;       // per-wheel lock amount that starts vibration
         protected const float LockMinSpeed = 3.0f;    // m/s; below this the ratio is just noise
-        protected const uint LockMinBrake = 20;       // brake input; ignore handbrake-only locks
+        // The minimum brake input for lock vibration is BrakeSettings.VibrationModeStart (0-255),
+        // the same meaning that setting has on the throttle; it also ignores handbrake-only locks.
 
         protected uint LastValidCarClass = 0;
         protected int LastValidCarCPI = 0;
@@ -125,7 +126,7 @@ namespace RacingDSX.GameParsers
             // reports slip relative to the surface's grip, so a fully locked wheel reads ~5.6 on
             // asphalt but only ~3.15 on gravel, and the old slip test (vibrate above ~4, zero
             // resistance below) gave no feedback at all on gravel.
-            float lockAmount = GetBrakeLock(out float worstWheel);
+            float lockAmount = GetBrakeLock(brakeSettings.VibrationModeStart, out float worstWheel);
             bool bWheelsLocked = worstWheel >= LockOnset;
 
             if (brakeSettings.TriggerMode == Config.TriggerMode.Off)
@@ -253,10 +254,10 @@ namespace RacingDSX.GameParsers
         // How locked the wheels are under braking: 0 = all rolling, 1 = all four locked. worstWheel
         // is the most locked single wheel. Airborne wheels are skipped: a braked wheel stops the
         // moment it leaves the ground, which is not a lock worth feeling.
-        protected float GetBrakeLock(out float worstWheel)
+        protected float GetBrakeLock(int minBrake, out float worstWheel)
         {
             worstWheel = 0;
-            if (!data.HasWheelSpeeds || data.Speed < LockMinSpeed || data.Brake <= LockMinBrake)
+            if (!data.HasWheelSpeeds || data.Speed < LockMinSpeed || data.Brake <= minBrake)
             {
                 return 0;
             }

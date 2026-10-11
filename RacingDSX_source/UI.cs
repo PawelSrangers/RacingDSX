@@ -42,6 +42,12 @@ namespace RacingDSX
         {
             InitializeComponent();
 
+            // Brake lock is detected from wheel speed since ADR-0009, so the brake grip loss
+            // threshold no longer does anything. Keep the value in the config, but don't offer a
+            // control that silently has no effect.
+            gripLossTrackBar.Enabled = false;
+            gripLossNumericUpDown.Enabled = false;
+
             //RacingDSXWorker = new RacingDSXWorker(this);
         }
 
@@ -722,8 +728,11 @@ namespace RacingDSX
 
         private void minBrakeStifnessNumericUpDown_ValueChanged(object sender, EventArgs e)
         {
-            selectedProfile.brakeSettings.MinStiffness = (int)Math.Floor(minBrakeVibrationNumericUpDown.Value);
-            minBrakeVibrationTrackBar.Value = selectedProfile.brakeSettings.MinStiffness;
+            // Upstream read the vibration box and moved the vibration slider here. Because
+            // SwitchDisplayedProfile sets this box on every start, MinStiffness was overwritten
+            // with MinVibration each launch and anything set on this slider never stuck.
+            selectedProfile.brakeSettings.MinStiffness = (int)Math.Floor(minBrakeStifnessNumericUpDown.Value);
+            minBrakeStiffnessTrackBar.Value = selectedProfile.brakeSettings.MinStiffness;
 
 
         }
@@ -738,8 +747,9 @@ namespace RacingDSX
 
         private void maxBrakeStifnessNumericUpDown_ValueChanged(object sender, EventArgs e)
         {
-            selectedProfile.brakeSettings.MaxStiffness = (int)Math.Floor(maxBrakeVibrationNumericUpDown.Value);
-            maxBrakeVibrationTrackBar.Value = selectedProfile.brakeSettings.MaxStiffness;
+            // Same upstream copy-paste slip as the Min handler above.
+            selectedProfile.brakeSettings.MaxStiffness = (int)Math.Floor(maxBrakeStifnessNumericUpDown.Value);
+            maxBrakeStiffnessTrackBar.Value = selectedProfile.brakeSettings.MaxStiffness;
 
 
         }

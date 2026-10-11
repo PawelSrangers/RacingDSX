@@ -923,7 +923,7 @@ namespace RacingDSX
             maxBrakeStiffnessLabel.Name = "maxBrakeStiffnessLabel";
             maxBrakeStiffnessLabel.Size = new System.Drawing.Size(155, 64);
             maxBrakeStiffnessLabel.TabIndex = 16;
-            maxBrakeStiffnessLabel.Text = "Max Stiffness";
+            maxBrakeStiffnessLabel.Text = "Stiffness at Light Brake";
             maxBrakeStiffnessLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             toolTip.SetToolTip(maxBrakeStiffnessLabel, "On a scale of 1-255 with 1 being most stiff");
             // 
@@ -952,7 +952,7 @@ namespace RacingDSX
             minBrakeStiffnessLabel.Name = "minBrakeStiffnessLabel";
             minBrakeStiffnessLabel.Size = new System.Drawing.Size(155, 64);
             minBrakeStiffnessLabel.TabIndex = 14;
-            minBrakeStiffnessLabel.Text = "Min Stifness";
+            minBrakeStiffnessLabel.Text = "Stiffness at Full Brake";
             minBrakeStiffnessLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             toolTip.SetToolTip(minBrakeStiffnessLabel, "On a scale of 1-255 with 1 being most stiff");
             // 
@@ -1116,7 +1116,7 @@ namespace RacingDSX
             gripLossLabel.Name = "gripLossLabel";
             gripLossLabel.Size = new System.Drawing.Size(155, 64);
             gripLossLabel.TabIndex = 2;
-            gripLossLabel.Text = "Grip Loss Value";
+            gripLossLabel.Text = "Grip Loss (not used)";
             gripLossLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             toolTip.SetToolTip(gripLossLabel, "The point at which the brake will begin to become choppy (0 = full grip, 100 = no grip)");
             // 

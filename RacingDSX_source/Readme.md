@@ -75,8 +75,11 @@ so it works the same on asphalt, gravel and dirt (the old tyre-slip test never f
 dropped the brake resistance to zero instead). On the Brake Trigger tab:
 
 - *Min / Max Brake Vibration* — vibration frequency with one wheel locked / all four locked.
-- *Max Stiffness* / *Min Stiffness* — vibration strength at a light press / at full brake.
-- *Grip Loss Value* — no longer used for the brake.
+- *Vibration Mode Start* — how far the brake must be pressed (0–255) before a lock vibrates.
+- *Stiffness at Light Brake* / *Stiffness at Full Brake* — vibration strength (0–255).
+  Earlier versions overwrote both with the Min/Max Brake Vibration values on every start, so
+  check them: the defaults are 5 and 150.
+- *Grip Loss (not used)* — no longer used for the brake, so the control is disabled.
 
 With ABS on in the game the wheels rarely lock, so expect little vibration.
 
