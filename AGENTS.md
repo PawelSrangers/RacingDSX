@@ -175,6 +175,8 @@ you changed.
 - **Config lives in the working directory.** `ConfigHandler` reads `RacingDSX.json` by relative
   path, so the exe's CWD decides which config it loads. New `Config` fields need only a property
   initialiser; missing keys in an old JSON deserialise to the default and get written back on save.
+  If the file exists but can't be read, the app warns, runs on defaults and never writes it that
+  session; saves go through a temp file + move so a crash can't truncate it (REQ-APP-008/009).
 - **App check gates everything.** The worker only starts once `AppCheckThread` sees a process from
   `executableNames` *and* one named `DSX`/`DualsenseX`. FH6's process is `ForzaHorizon6`. If the
   user reports "nothing happens at all", check this before looking at the telemetry path.

@@ -64,17 +64,9 @@ namespace RacingDSX.GameParsers
         {
             ReportableInstruction reportableInstruction = new ReportableInstruction();
 
+            // Remembered in ParsePacket from every frame: FH6's out-of-race frames are all zeros.
             uint currentClass = LastValidCarClass;
-            if (data.CarClass > 0)
-            {
-                LastValidCarClass = currentClass = data.CarClass;
-            }
-
             int currentCPI = LastValidCarCPI;
-            if (data.CarPerformanceIndex > 0)
-            {
-                LastValidCarCPI = currentCPI = Math.Min((int)data.CarPerformanceIndex, 255);
-            }
 
 
             RightTrigger.Parameters = new object[] { controllerIndex, Trigger.Right, TriggerMode.Normal, 0, 0 };
@@ -163,6 +155,14 @@ namespace RacingDSX.GameParsers
 
             data.CarClass = packet.CarClass();
             data.CarPerformanceIndex = packet.CarPerformanceIndex();
+            if (data.CarClass > 0)
+            {
+                LastValidCarClass = data.CarClass;
+            }
+            if (data.CarPerformanceIndex > 0)
+            {
+                LastValidCarCPI = (int)Math.Min(data.CarPerformanceIndex, 255);
+            }
 
             data.Speed = packet.Speed();
             data.Power = packet.Power();

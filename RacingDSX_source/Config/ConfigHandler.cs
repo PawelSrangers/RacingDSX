@@ -18,6 +18,9 @@ namespace RacingDSX.Config
         //Singleton access to config data
         private static readonly String configFilePath = "RacingDSX.json";
         private static Config configData;
+        // Set when RacingDSX.json exists but could not be read. The file is then left alone for the
+        // whole session: writing defaults over it would wipe the user's tuned settings.
+        private static bool bConfigReadOnly = false;
 
         private static void InitializeConfig()
         {
@@ -63,28 +66,61 @@ namespace RacingDSX.Config
         private static Config ReadConfigFromDisk()
         {
 
-            try
-            {      
-                if (!File.Exists(configFilePath)) {
-                    return null;
-                }
-                string jsonString = File.ReadAllText(configFilePath);
-
-                Config config = JsonSerializer.Deserialize<Config>(jsonString);
-                return config;
-            }
-            catch (Exception)
+            if (!File.Exists(configFilePath))
             {
                 return null;
             }
 
+            Exception error = null;
+            // A sharing violation (file open in an editor, antivirus scan) is usually gone within a
+            // second, so retry I/O errors briefly. Bad JSON will not fix itself; fail at once.
+            for (int attempt = 0; attempt < 5; attempt++)
+            {
+                try
+                {
+                    string jsonString = File.ReadAllText(configFilePath);
+                    Config config = JsonSerializer.Deserialize<Config>(jsonString);
+                    if (config != null)
+                    {
+                        return config;
+                    }
+                    error = new InvalidDataException("the file contains no settings");
+                    break;
+                }
+                catch (IOException e)
+                {
+                    error = e;
+                    System.Threading.Thread.Sleep(200);
+                }
+                catch (Exception e)
+                {
+                    error = e;
+                    break;
+                }
+            }
+
+            bConfigReadOnly = true;
+            MessageBox.Show(
+                $"{Path.GetFullPath(configFilePath)} could not be read:\r\n{error.Message}\r\n\r\n" +
+                "The file was left untouched. RacingDSX is running with default settings, and changes " +
+                "made in this session will not be saved. Fix or remove the file and restart RacingDSX.",
+                "RacingDSX settings not loaded", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return null;
         }
         private static void WriteConfigToDisk()
         {
+            if (bConfigReadOnly)
+            {
+                return;
+            }
             try
             {
+                // Write a temp file and move it over the real one, so a crash mid-write leaves the
+                // old file intact instead of a truncated one that would fail to load next start.
                 string jsonString = JsonSerializer.Serialize(configData);
-                File.WriteAllText(configFilePath, jsonString);
+                string tempPath = configFilePath + ".tmp";
+                File.WriteAllText(tempPath, jsonString);
+                File.Move(tempPath, configFilePath, true);
             } catch (Exception)
             {
 

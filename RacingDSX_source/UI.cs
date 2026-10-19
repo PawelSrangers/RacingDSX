@@ -1123,7 +1123,7 @@ namespace RacingDSX
         {
 
             selectedProfile.RPMRedlineRatio = 0.9f;
-            selectedProfile.gameUDPPort = 9999;
+            selectedProfile.gameUDPPort = 5300; // Forza's default Data Out port; upstream's 9999 cut telemetry off
             FullResetValues();
         }
 

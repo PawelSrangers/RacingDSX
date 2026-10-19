@@ -193,10 +193,13 @@ namespace RacingDSX.GameParsers
             ThrottleSettings throttleSettings = activeProfile.throttleSettings;
             avgAccel = (float)Math.Sqrt((throttleSettings.TurnAccelerationScale * (data.AccelerationX * data.AccelerationX)) + (throttleSettings.ForwardAccelerationScale * (data.AccelerationZ * data.AccelerationZ)));
 
-            // Define losing grip as front tires slipping or rear tires slipping while accelerating a fair ammount
+            // Define losing grip as front tires slipping or rear tires slipping while accelerating a fair ammount.
+            // Only counts with the throttle pressed: front slip under braking used to make the throttle
+            // trigger stiff (stiffness 175-255) on every stop.
             bool bLosingAccelGrip =
-            data.FrontWheelsCombinedTireSlip > throttleSettings.GripLossValue
-            || (data.RearWheelsCombinedTireSlip > throttleSettings.GripLossValue && data.Accelerator > 200);
+            data.Accelerator > throttleSettings.VibrationModeStart
+            && (data.FrontWheelsCombinedTireSlip > throttleSettings.GripLossValue
+            || (data.RearWheelsCombinedTireSlip > throttleSettings.GripLossValue && data.Accelerator > 200));
 
             if (throttleSettings.TriggerMode == Config.TriggerMode.Off)
             {
