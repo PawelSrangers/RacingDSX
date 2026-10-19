@@ -4,6 +4,13 @@
 - **Дата:** 2026-09-09
 - **Затронуто:** `UI.Designer.cs` (оригинал сохранён в `UI.Designer.cs.darktheme.bak`)
 
+## Relations
+
+- Depends-on: 0013
+- Supersedes: none
+- Constrains: none
+- Related: 0001, 0007, 0010
+
 ## Контекст
 
 Апстрим вручную покрасил интерфейс в тёмный цвет: `BackColor = FromArgb(18,18,18)` и

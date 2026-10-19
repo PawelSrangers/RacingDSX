@@ -4,6 +4,13 @@
 - **Дата:** 2026-10-10
 - **Затронуто:** `RacingDSXWorker.cs` (`HoldVibration`, `ApplyHeldVibration`, `SendData`)
 
+## Relations
+
+- Depends-on: 0001
+- Supersedes: none
+- Constrains: none
+- Related: 0002, 0007, 0009
+
 ## Контекст
 
 Пользователь пожаловался, что при блокировке колёс на торможении у триггера «мёртвая зона»:

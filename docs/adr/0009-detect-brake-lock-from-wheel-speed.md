@@ -5,6 +5,13 @@
 - **Затронуто:** `GameParsers/Parser.cs` (`GetInRaceLeftTriggerInstruction`, `GetBrakeLock`),
   `GameParsers/ForzaParser.cs`, `GameParsers/DirtParser.cs`, `DataPacket.cs`
 
+## Relations
+
+- Depends-on: none
+- Supersedes: none
+- Constrains: none
+- Related: 0007, 0008, 0010, 0014
+
 ## Контекст
 
 Пользователь: на гравии при торможении с полной блокировкой колёс тормозной триггер не даёт

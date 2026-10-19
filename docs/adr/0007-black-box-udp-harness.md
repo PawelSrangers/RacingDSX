@@ -5,6 +5,13 @@
 - **Затронуто:** `tools/fake_forza.ps1`, `tools/fake_dsx.ps1`, `tools/run_harness.ps1`,
   `tools/screenshot_ui.ps1`
 
+## Relations
+
+- Depends-on: 0013
+- Supersedes: none
+- Constrains: none
+- Related: 0001, 0002, 0004, 0005, 0006
+
 ## Контекст
 
 В проекте нет тестов. Главный баг (ADR-0001) — это свойство **потока сообщений между

@@ -4,6 +4,13 @@
 - **Дата:** 2026-09-09
 - **Затронуто:** `RacingDSXWorker.AdjustToBufferType`, `Config/ConfigHandler.cs`
 
+## Relations
+
+- Depends-on: none
+- Supersedes: none
+- Constrains: none
+- Related: 0001, 0002, 0004, 0013
+
 ## Контекст
 
 Тип игры определяется только по длине UDP-датаграммы (`AdjustToBufferType`). Эта же функция

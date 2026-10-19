@@ -6,6 +6,13 @@
   `Program.cs` (`ParametersConverter.ToSafeInt32`), `GameParsers/Parser.cs` (`Map`, лайтбар),
   `UI.cs` (`StartRacingDSXThread`, `StopRacingDSXThread`)
 
+## Relations
+
+- Depends-on: none
+- Supersedes: none
+- Constrains: 0007
+- Related: 0001, 0002, 0003
+
 ## Контекст
 
 Кроме залипания, в исходном коде было несколько путей, которыми RacingDSX мог молча

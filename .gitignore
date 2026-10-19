@@ -16,3 +16,11 @@ obj/
 # Telemetry recordings: keep the raw .fzrec (small, needed for replay), not the CSVs that
 # tools/decode_recording.ps1 regenerates from them.
 /recordings/*.csv
+
+# Resolved secrets (from config/*.tpl via `op inject`)
+config/*.env
+.env
+.env.*
+
+# OS
+.DS_Store

@@ -4,6 +4,13 @@
 - **Дата:** 2026-10-11
 - **Затронуто:** `UI.cs`, `UI.Designer.cs` (тексты подписей), `GameParsers/Parser.cs`
 
+## Relations
+
+- Depends-on: 0009
+- Supersedes: none
+- Constrains: none
+- Related: 0005, 0006
+
 ## Контекст
 
 После ADR-0009 пользователь спросил, не противоречат ли настройки коду. Сверка всех настроек

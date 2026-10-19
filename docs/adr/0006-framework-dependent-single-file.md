@@ -4,6 +4,13 @@
 - **Дата:** 2026-09-09
 - **Затронуто:** процесс сборки; `RacingDSX.csproj` не менялся
 
+## Relations
+
+- Depends-on: 0013
+- Supersedes: none
+- Constrains: 0010
+- Related: 0007
+
 ## Контекст
 
 У пользователя был exe из апстрим-релиза: `RacingDSX.exe` (~3.6 МБ), `RacingDSX.dll.config`,

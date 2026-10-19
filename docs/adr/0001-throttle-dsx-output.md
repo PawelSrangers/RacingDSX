@@ -4,6 +4,13 @@
 - **Дата:** 2026-09-09
 - **Затронуто:** `RacingDSXWorker.cs` (`SendData`, `IsSendDue`, `Combine`, `Send`), `Config/Config.cs`
 
+## Relations
+
+- Depends-on: 0013
+- Supersedes: none
+- Constrains: 0008
+- Related: 0002, 0003, 0005, 0007
+
 ## Контекст
 
 В Forza Horizon 6 управление залипало в случайный момент: стик уже отпущен, а игра продолжает

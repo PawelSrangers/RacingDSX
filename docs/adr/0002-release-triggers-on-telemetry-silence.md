@@ -4,6 +4,13 @@
 - **Дата:** 2026-09-09
 - **Затронуто:** `RacingDSXWorker.cs` (`Run`, `OnTelemetryIdle`)
 
+## Relations
+
+- Depends-on: none
+- Supersedes: none
+- Constrains: none
+- Related: 0001, 0003, 0004, 0008
+
 ## Контекст
 
 Исходный цикл приёма блокировался на `client.Receive()` без таймаута. Сброс триггеров в
