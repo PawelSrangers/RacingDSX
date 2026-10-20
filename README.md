@@ -62,9 +62,11 @@ reach the game through DSX's virtual controller, not through RacingDSX.
 
 ### 1. Get RacingDSX
 
-There are no prebuilt releases of this fork yet, so build it yourself (see [Building](#building)).
-Put `RacingDSX.exe` and `RacingDSX.dll.config` in a folder of their own.
-RacingDSX keeps its settings in `RacingDSX.json` in the folder it is started from.
+Download the zip from [Releases](https://github.com/PawelSrangers/RacingDSX/releases/latest) and
+extract it to a folder of its own (or build it yourself, see [Building](#building)). The window
+title shows the version, e.g. `RacingDSX version: 0.7.0`.
+RacingDSX keeps its settings in `RacingDSX.json` in the folder it is started from. When upgrading,
+replace only `RacingDSX.exe` and `RacingDSX.dll.config` and keep your `RacingDSX.json`.
 
 ### 2. DSX
 
